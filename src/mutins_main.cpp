@@ -319,6 +319,13 @@ int main(int argc, char * argv[])
 
 			MutantBase * pMutant = vMutants[iMutantIndex];
 
+			if( opt.verbose() )
+			{
+				cout << "Applying mutant " << iMutantIndex
+					<< " at insertion point " << iInsertionIndex << "."
+					<< endl << endl;
+			}
+
 			for( size_t j = 0; j < vTargets.size(); j++)
 			{
 				Target & t = vTargets[j];
