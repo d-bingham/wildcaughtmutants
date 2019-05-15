@@ -41,6 +41,8 @@ int main(int argc, char * argv[])
 		return 1;
 
 	vector<MutantBase*> vMutants;
+	vector<int> vMutantCounts;
+
 	vector<Target> vTargets;
 
 	int iCountOnly = 0;
@@ -127,7 +129,7 @@ int main(int argc, char * argv[])
 		Target(  sTarget, new /*Mutant::*/Line(sTargetFile, opt, true)  ) );
 	}
 
-	vector<Match> vMatches;
+	// vector<Match> vMatches;
 
 
 	if (vMutants.size() == 0)
@@ -218,7 +220,9 @@ int main(int argc, char * argv[])
 					{
 						if (pMutant->testMatch(i, t.pLine))
 						{
-							vMatches.push_back(Match( t, i, pMutant ));
+							//vMatches.push_back(Match( t, i, pMutant ));
+							pMutant->found();
+							iCountOnly++;
 						}
 					}
 				}
@@ -244,7 +248,9 @@ int main(int argc, char * argv[])
 				{
 					if (pMutant->testMatch(i, t.pLine))
 					{
-						vMatches.push_back(Match( t, i, pMutant ) );
+						//vMatches.push_back(Match( t, i, pMutant ) );
+						pMutant->found();
+						iCountOnly++;
 					}
 				}
 			}
@@ -253,43 +259,93 @@ int main(int argc, char * argv[])
 		}
 
 
-		if( opt.countOnly() )
+		if( opt.countOnly() || opt.verbose() )
 		{
 			cout << "Loaded " << vMutants.size() << " mutants." << endl;
 			cout << "Found " << iCountOnly << " matches." << endl;
 		}
-		else if( opt.verbose() )
-		{
-			cout << "Loaded " << vMutants.size() << " mutants." << endl;
-			cout << "Found " << vMatches.size() << " matches." << endl;
-		}
 
-		if (iCountOnly == 0 && vMatches.size() == 0)
+		if (iCountOnly == 0 )
 		{
 			cout << "No matches found." << endl;
 			return 1;
 		}
 
 
-		if (!opt.countOnly() && vMatches.size() > 0 )
+		if (!opt.countOnly() && iCountOnly > 0 )
 		{
-			size_t iIndex = mt() % vMatches.size();
+			size_t iIndex = mt() % iCountOnly;
 
 			if (opt.matchIndex() > -1)
 				iIndex = static_cast<size_t>(opt.matchIndex());
 
-			if (iIndex >= vMatches.size())
+			if (iIndex >= static_cast<size_t>(iCountOnly) )
 			{
 				cout << "Invalid match index." << endl;
 				return 1;
 			}
 
-			Match & m = vMatches[iIndex];
+			// Find the nth match out of the list...
+			size_t iMutantIndex = 0;
+			size_t iInsertionIndex = 0;
+
+			for( size_t i = 0; i < vMutants.size(); i++ ) 
+			{
+				if( vMutants[i]->insertionPointCount() > iIndex )
+				{
+					iMutantIndex = i;
+					iInsertionIndex = iIndex;
+					break;
+				}
+				else
+				{
+					iIndex -= vMutants[i]->insertionPointCount();
+				}
+			}
+
+			if( iMutantIndex > vMutants.size() 
+				|| iInsertionIndex >= vMutants[iMutantIndex]->insertionPointCount() )
+			{
+				cout << "Invalid random mutant selection." << endl;
+				return 1;
+			}
+
+
+
+
+			//Match & m = vMatches[iIndex];
+
+			Match * pMatch = nullptr;
+
+			MutantBase * pMutant = vMutants[iMutantIndex];
+
+			for( size_t j = 0; j < vTargets.size(); j++)
+			{
+				Target & t = vTargets[j];
+
+				for (size_t i = 0; i + pMutant->matchSize()
+					< t.pLine->size(); i++)
+				{
+					if (pMutant->testMatch(i, t.pLine))
+					{
+						if( iInsertionIndex == 0 )
+						{
+							pMatch = new Match(t, i, pMutant);
+						}
+						else 
+						{
+							iInsertionIndex--;
+						}
+					}
+				}
+			}
+
+
 
 
 			if (!opt.skipBackup())
 			{
-				string sOrigFilename = m.t.sFilename + ".orig";
+				string sOrigFilename = pMatch->t.sFilename + ".orig";
 
 				struct stat buffer;
 				if (stat(sOrigFilename.c_str(), &buffer) != 0)
@@ -303,7 +359,7 @@ int main(int argc, char * argv[])
 					ofstream fOrig;
 					fOrig.open(sOrigFilename.c_str());
 
-					fOrig << m.t.pLine->source();
+					fOrig << pMatch->t.pLine->source();
 
 					fOrig.close();
 				}
@@ -315,24 +371,24 @@ int main(int argc, char * argv[])
 			}
 
 			ofstream out;
-			out.open(m.t.sFilename.c_str());
+			out.open(pMatch->t.sFilename.c_str());
 
 
 			size_t iPatchStart =
-				m.t.pLine->terms()[m.iOffset].offset();
+				pMatch->t.pLine->terms()[pMatch->iOffset].offset();
 
-			size_t iTermCount = m.pM->matchSize();
+			size_t iTermCount = pMatch->pM->matchSize();
 
 			size_t iPatchEnd =
-				m.t.pLine->terms()[m.iOffset + iTermCount - 1].offset()
-				+ m.t.pLine->terms()[m.iOffset + iTermCount - 1].size();
+				pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].offset()
+				+ pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].size();
 
 
 			stringstream ss;
 
-			for (size_t i = 0; i < m.pM->replaceSize(); i++)
+			for (size_t i = 0; i < pMatch->pM->replaceSize(); i++)
 			{
-				const Line::Term * pTerm = &m.pM->replaceTerm(i);
+				const Line::Term * pTerm = &pMatch->pM->replaceTerm(i);
 
 				switch (pTerm->type())
 				{
@@ -351,10 +407,10 @@ int main(int argc, char * argv[])
 				{
 					size_t iIndex = string::npos;
 
-					for (size_t j = 0; j < m.pM->matchSize(); j++)
+					for (size_t j = 0; j < pMatch->pM->matchSize(); j++)
 					{
-						if (m.pM->matchTerm(j).type() == pTerm->type()
-							&& m.pM->matchTerm(j).index()
+						if (pMatch->pM->matchTerm(j).type() == pTerm->type()
+							&& pMatch->pM->matchTerm(j).index()
 							== pTerm->index())
 						{
 							iIndex = j;
@@ -364,7 +420,7 @@ int main(int argc, char * argv[])
 
 					if (iIndex != string::npos)
 					{
-						ss << " " << m.t.pLine->terms()[m.iOffset + iIndex].value()
+						ss << " " << pMatch->t.pLine->terms()[pMatch->iOffset + iIndex].value()
 							<< " ";
 					}
 				}
@@ -379,10 +435,10 @@ int main(int argc, char * argv[])
 			if (opt.verbose())
 			{
 				cout << "Mutant (and source patch):" << endl;
-				cout << "   " << m.pM->serialize() << endl << endl;
+				cout << "   " << pMatch->pM->serialize() << endl << endl;
 
 				cout << "Extracted code:" << endl;
-				cout << "   " << m.t.pLine->source().substr(iPatchStart,
+				cout << "   " << pMatch->t.pLine->source().substr(iPatchStart,
 					iPatchEnd - iPatchStart) << endl << endl;
 
 				cout << "Un-patched code:" << endl;
@@ -392,14 +448,16 @@ int main(int argc, char * argv[])
 
 			if (iPatchStart > 0)
 			{
-				out << m.t.pLine->source().substr(0, iPatchStart - 1);
+				out << pMatch->t.pLine->source().substr(0, iPatchStart - 1);
 			}
 
 			out << ss.str();
 
-			out << m.t.pLine->source().substr(iPatchEnd + 1);
+			out << pMatch->t.pLine->source().substr(iPatchEnd + 1);
 
 			out.close();
+
+			delete pMatch;
 		}
 	}
 

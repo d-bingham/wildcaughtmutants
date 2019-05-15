@@ -91,7 +91,7 @@ class Line
 
 class MutantBase
 {
-  public:
+public:
     virtual size_t matchSize() = 0;
     virtual const Line::Term &matchTerm(size_t iIndex) = 0;
     virtual size_t replaceSize() = 0;
@@ -99,6 +99,11 @@ class MutantBase
     virtual bool testMatch(size_t iOffset, Line *pLine) = 0;
     virtual ~MutantBase() {}
     virtual std::string serialize() = 0;
+    virtual size_t insertionPointCount() { return m_iInsertionPointCount; }
+    virtual void found() { m_iInsertionPointCount++; }
+
+private:
+    size_t m_iInsertionPointCount = 0;
 };
 
 class IdentifierShift : public MutantBase
