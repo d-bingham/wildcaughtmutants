@@ -147,6 +147,8 @@ int main(int argc, char * argv[])
 			cout << endl
 				<< "No mutant specified to print."
 				<< endl;
+
+			return 1;
 		}
 		else if( static_cast<size_t>(opt.mutantIndex()) >= vMutants.size()
 						|| opt.mutantIndex() < 0 )
@@ -154,6 +156,15 @@ int main(int argc, char * argv[])
 			cout << endl
 				<< "Invalid mutant index specified."
 				<< endl;
+
+			return 1;
+		}
+		else 
+		{
+			cout << vMutants[opt.mutantIndex()]->serialize()
+				<< endl;
+			
+			return 0;
 		}
 	}
 	else if (vTargets.size() == 0 )
