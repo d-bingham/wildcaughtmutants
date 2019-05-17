@@ -300,24 +300,32 @@ int main(int argc, char * argv[])
 			size_t iMutantIndex = 0;
 			size_t iInsertionIndex = 0;
 
-			for( size_t i = 0; i < vMutants.size(); i++ ) 
+			if( opt.matchIndex() > -1 && opt.mutantIndex() > -1 ) 
 			{
-				if( vMutants[i]->insertionPointCount() > iIndex )
+				iMutantIndex = opt.mutantIndex();
+				iInsertionIndex = opt.matchIndex();
+			}
+			else 
+			{
+				for( size_t i = 0; i < vMutants.size(); i++ ) 
 				{
-					iMutantIndex = i;
-					iInsertionIndex = iIndex;
-					break;
-				}
-				else
-				{
-					iIndex -= vMutants[i]->insertionPointCount();
+					if( vMutants[i]->insertionPointCount() > iIndex )
+					{
+						iMutantIndex = i;
+						iInsertionIndex = iIndex;
+						break;
+					}
+					else
+					{
+						iIndex -= vMutants[i]->insertionPointCount();
+					}
 				}
 			}
 
 			if( iMutantIndex > vMutants.size() 
 				|| iInsertionIndex >= vMutants[iMutantIndex]->insertionPointCount() )
 			{
-				cout << "Invalid random mutant selection." << endl;
+				cout << "Invalid mutant selection." << endl;
 				return 1;
 			}
 
