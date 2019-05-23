@@ -59,8 +59,6 @@ int main(int argc, char * argv[])
 			return 1;
 		}
 
-		bool bInMultilineComment = false;
-
 		while (in.good())
 		{
 			string sLine;
