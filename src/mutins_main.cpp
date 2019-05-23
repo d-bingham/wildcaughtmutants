@@ -59,6 +59,8 @@ int main(int argc, char * argv[])
 			return 1;
 		}
 
+		bool bInMultilineComment = false;
+
 		while (in.good())
 		{
 			string sLine;
@@ -125,9 +127,13 @@ int main(int argc, char * argv[])
 		sTargetFile.assign((istreambuf_iterator<char>(in)),
 			(istreambuf_iterator<char>()));
 
+		cout << sTargetFile << endl;
+
 		vTargets.push_back(
 		Target(  sTarget, new /*Mutant::*/Line(sTargetFile, opt, true)  ) );
 	}
+
+	return 0;
 
 	// vector<Match> vMatches;
 
