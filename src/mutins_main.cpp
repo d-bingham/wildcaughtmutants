@@ -64,6 +64,19 @@ int main(int argc, char * argv[])
 			string sLine;
 			getline(in, sLine);
 
+			size_t iStartLoc = sLine.find("/*");
+
+			while( iStartLoc != string::npos )
+			{
+				size_t iEndLoc = sLine.find("*/", iStartLoc + 2);
+
+				if( iEndLoc == string::npos )
+				{
+					sLine = sLine.substr(0, iStartLoc) +
+						sLine.substr(iEndLoc + 2);
+				}
+			}
+
 			if (sLine.size() < 3)
 				continue;
 
@@ -126,6 +139,7 @@ int main(int argc, char * argv[])
 			(istreambuf_iterator<char>()));
 
 		bool bInMultilineComment = false;
+		bool bInSingleLineComment = false;
 
 		if( opt.CStyleComments() )
 		{
@@ -154,9 +168,23 @@ int main(int argc, char * argv[])
 
 			for( size_t i = 1; i < sTargetFile.length(); i++ )
 			{
-				if( bInMultilineComment )
+				if( bInSingleLineComment )
 				{
-					if( sTargetFile[i] == '*' && i+1 < sTargetFile.length() && sTargetFile[i+1] == '/' )
+					if( sTargetFile[i] == '\r' || sTargetFile[i] == '\n')
+					{
+							
+						bInSingleLineComment = false;
+					}
+					else
+					{
+						sTargetFile[i] = ' ';
+					}
+				}
+				else if( bInMultilineComment )
+				{
+					if( sTargetFile[i] == '*' 
+						&& i+1 < sTargetFile.length() 
+						&& sTargetFile[i+1] == '/' )
 					{
 						sTargetFile[i] = ' ';
 						sTargetFile[i+1] = ' ';
@@ -169,46 +197,26 @@ int main(int argc, char * argv[])
 				}
 				else 
 				{
-					if( sTargetFile[i] == '*' || sTargetFile[i-1] == '/' )
+					if( sTargetFile[i] == '*' && sTargetFile[i-1] == '/' )
 					{
-						sTargetFile[i] == ' ';
-						sTargetFile[i-1] == ' ';
+						sTargetFile[i] = ' ';
+						sTargetFile[i-1] = ' ';
 						bInMultilineComment = true;
 					}
 					else if( sTargetFile[i] == '/' && sTargetFile[i-1] == '/')
 					{
-						sTargetFile = sTargetFile.substr(i-1);
-						break;
+						sTargetFile[i] = ' ';
+						sTargetFile[i-1] = ' ';
+						bInSingleLineComment = true;
 					}
-				}
-			}
-
-
-			size_t iStartLoc = sTargetFile.find("/*");
-
-			while( iStartLoc != string::npos )
-			{
-				size_t iEndLoc = sTargetFile.find("*/", iStartLoc + 2);
-
-				if( iEndLoc == string::npos )
-				{
-					sTargetFile = sTargetFile.substr(0, iStartLoc) +
-						sTargetFile.substr(iEndLoc + 2);
 				}
 			}
 
 		}		
 
-		cout << sTargetFile << endl;
-
 		vTargets.push_back(
 		Target(  sTarget, new /*Mutant::*/Line(sTargetFile, opt, true)  ) );
 	}
-
-	return 0;
-
-	// vector<Match> vMatches;
-
 
 	if (vMutants.size() == 0)
 	{
@@ -557,7 +565,7 @@ int main(int argc, char * argv[])
 
 			out << ss.str();
 
-			out << pMatch->t.pLine->source().substr(iPatchEnd + 1);
+			out << pMatch->t.pLine->source().substr(iPatchEnd);
 
 			out.close();
 
