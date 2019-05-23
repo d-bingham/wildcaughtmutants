@@ -125,6 +125,80 @@ int main(int argc, char * argv[])
 		sTargetFile.assign((istreambuf_iterator<char>(in)),
 			(istreambuf_iterator<char>()));
 
+		bool bInMultilineComment = false;
+
+		if( opt.CStyleComments() )
+		{
+			// Check for a comment left over from
+			// a previous line
+			if( bInMultilineComment )
+			{
+				size_t iLoc = sTargetFile.find("*/");
+
+				if( iLoc == string::npos )
+				{
+					// If we're in a multiline and
+					// we don't see an end, ignore this
+					// line
+					continue;
+				}
+				else
+				{
+					// Continue the line after the
+					// multiline ends
+					sTargetFile = sTargetFile.substr(iLoc + 2);
+					bInMultilineComment = false;
+				}
+			}
+
+
+			for( size_t i = 1; i < sTargetFile.length(); i++ )
+			{
+				if( bInMultilineComment )
+				{
+					if( sTargetFile[i] == '*' && i+1 < sTargetFile.length() && sTargetFile[i+1] == '/' )
+					{
+						sTargetFile[i] = ' ';
+						sTargetFile[i+1] = ' ';
+						bInMultilineComment = false;
+					}
+					else 
+					{
+						sTargetFile[i] = ' ';
+					}
+				}
+				else 
+				{
+					if( sTargetFile[i] == '*' || sTargetFile[i-1] == '/' )
+					{
+						sTargetFile[i] == ' ';
+						sTargetFile[i-1] == ' ';
+						bInMultilineComment = true;
+					}
+					else if( sTargetFile[i] == '/' && sTargetFile[i-1] == '/')
+					{
+						sTargetFile = sTargetFile.substr(i-1);
+						break;
+					}
+				}
+			}
+
+
+			size_t iStartLoc = sTargetFile.find("/*");
+
+			while( iStartLoc != string::npos )
+			{
+				size_t iEndLoc = sTargetFile.find("*/", iStartLoc + 2);
+
+				if( iEndLoc == string::npos )
+				{
+					sTargetFile = sTargetFile.substr(0, iStartLoc) +
+						sTargetFile.substr(iEndLoc + 2);
+				}
+			}
+
+		}		
+
 		cout << sTargetFile << endl;
 
 		vTargets.push_back(
