@@ -446,8 +446,9 @@ void /*Mutant::*/Line::addTerm(tokenState ts, std::string sValue,
 
 }
 
-/*Mutant::*/Line::Line(string sLine, Options & opt, bool bTarget)
+/*Mutant::*/Line::Line(string sLine, Options & opt, bool bTarget, string sOriginalSource)
 	: m_sSource(sLine)
+	, m_sOriginalSource(sOriginalSource)
 {
 	if (!bTarget)
 	{

@@ -29,7 +29,8 @@ class Options;
 class Line
 {
   public:
-    Line(std::string sLine, Options &opt, bool bTarget = false);
+    Line(std::string sLine, Options &opt, bool bTarget = false, 
+        std::string sOriginalSource = "");
     Line(Options &opt);
 
     class Term
@@ -83,10 +84,19 @@ class Line
 
     std::vector<Term> &terms() { return m_vTerms; }
     std::string source() { return m_sSource; }
+    std::string originalSource() {
+        if( m_sOriginalSource.length() > 0 ) {
+            return m_sOriginalSource;
+        }
+        else {
+            return source();
+        }
+    }
 
   private:
     std::vector<Term> m_vTerms;
     std::string m_sSource;
+    std::string m_sOriginalSource;
 };
 
 class MutantBase

@@ -138,6 +138,10 @@ int main(int argc, char * argv[])
 		sTargetFile.assign((istreambuf_iterator<char>(in)),
 			(istreambuf_iterator<char>()));
 
+		string sOriginalFile = sTargetFile;
+
+		cout << sOriginalFile << endl;
+
 		bool bInMultilineComment = false;
 		bool bInSingleLineComment = false;
 
@@ -215,7 +219,8 @@ int main(int argc, char * argv[])
 		}		
 
 		vTargets.push_back(
-		Target(  sTarget, new /*Mutant::*/Line(sTargetFile, opt, true)  ) );
+			Target( sTarget, new /*Mutant::*/Line(sTargetFile, opt, true, sOriginalFile) ) 
+		);
 	}
 
 	if (vMutants.size() == 0)
@@ -560,12 +565,12 @@ int main(int argc, char * argv[])
 
 			if (iPatchStart > 0)
 			{
-				out << pMatch->t.pLine->source().substr(0, iPatchStart - 1);
+				out << pMatch->t.pLine->originalSource().substr(0, iPatchStart - 1);
 			}
 
 			out << ss.str();
 
-			out << pMatch->t.pLine->source().substr(iPatchEnd);
+			out << pMatch->t.pLine->originalSource().substr(iPatchEnd);
 
 			out.close();
 
