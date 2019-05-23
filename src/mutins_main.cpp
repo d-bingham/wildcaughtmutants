@@ -140,8 +140,6 @@ int main(int argc, char * argv[])
 
 		string sOriginalFile = sTargetFile;
 
-		cout << sOriginalFile << endl;
-
 		bool bInMultilineComment = false;
 		bool bInSingleLineComment = false;
 
