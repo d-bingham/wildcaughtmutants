@@ -48,8 +48,16 @@ class Line;
 		bool CStyleComments() { return m_bCStyleComments; }
 		void markEvent(std::string sEvent);
 		void displayEvents();
+		bool features() { return m_bFeatures; }
+		int context() { return m_iContext; }
+		int label() { return m_iLabel; }
+		bool abstract() { return m_bAbstract; }
 
 	private:
+		bool m_bAbstract;
+		bool m_bFeatures;
+		int m_iContext;
+		int m_iLabel;
 		bool m_bGood;
 		bool m_bTrimText;
 		bool m_bCStyleComments;

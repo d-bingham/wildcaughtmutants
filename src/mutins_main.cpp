@@ -33,6 +33,335 @@ public:
 	MutantBase * pM;
 };
 
+
+// actually perform the mutation insertion
+void insertMutant(Options & opt, Match * pMatch)
+{
+	ofstream out;
+	out.open(pMatch->t.sFilename.c_str());
+
+
+	size_t iPatchStart =
+		pMatch->t.pLine->terms()[pMatch->iOffset].offset();
+
+	size_t iTermCount = pMatch->pM->matchSize();
+
+	size_t iPatchEnd =
+		pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].offset()
+		+ pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].size();
+
+
+	stringstream ss;
+
+	for (size_t i = 0; i < pMatch->pM->replaceSize(); i++)
+	{
+		const Line::Term * pTerm = &pMatch->pM->replaceTerm(i);
+
+		switch (pTerm->type())
+		{
+		case tsKeyword:
+		case tsOperator:
+			ss << " " << pTerm->value() << " ";
+			break;
+
+		case tsExactIdentifier:
+			ss << " " << pTerm->value() << " ";
+			break;
+
+		case tsLiteral:
+		case tsIdentifier:
+		case tsNumber:
+		{
+			size_t iIndex = string::npos;
+
+			for (size_t j = 0; j < pMatch->pM->matchSize(); j++)
+			{
+				if (pMatch->pM->matchTerm(j).type() == pTerm->type()
+					&& pMatch->pM->matchTerm(j).index()
+					== pTerm->index())
+				{
+					iIndex = j;
+					break;
+				}
+			}
+
+			if (iIndex != string::npos)
+			{
+				ss << " " << pMatch->t.pLine->terms()[pMatch->iOffset + iIndex].value()
+					<< " ";
+			}
+		}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+
+	if (opt.verbose())
+	{
+		cout << "Mutant (and source patch):" << endl;
+		cout << "   " << pMatch->pM->serialize() << endl << endl;
+
+		cout << "Extracted code:" << endl;
+		cout << "   " << pMatch->t.pLine->source().substr(iPatchStart,
+			iPatchEnd - iPatchStart) << endl << endl;
+
+		cout << "Un-patched code:" << endl;
+		cout << "   " << ss.str() << endl;
+	}
+
+
+	if (iPatchStart > 0)
+	{
+		out << pMatch->t.pLine->originalSource().substr(0, iPatchStart);
+	}
+
+	out << ss.str();
+
+	out << pMatch->t.pLine->originalSource().substr(iPatchEnd);
+
+	out.close();
+
+}
+
+
+string stripComments(string sSource)
+{
+	bool bInMultilineComment = false;
+	bool bInSingleLineComment = false;
+	
+	// // Check for a comment left over from
+	// // a previous line
+	// if( bInMultilineComment )
+	// {
+	// 	size_t iLoc = sTargetFile.find("*/");
+
+	// 	if( iLoc == string::npos )
+	// 	{
+	// 		// If we're in a multiline and
+	// 		// we don't see an end, ignore this
+	// 		// line
+	// 		continue;
+	// 	}
+	// 	else
+	// 	{
+	// 		// Continue the line after the
+	// 		// multiline ends
+	// 		sTargetFile = sTargetFile.substr(iLoc + 2);
+	// 		bInMultilineComment = false;
+	// 	}
+	// }
+
+
+	for( size_t i = 1; i < sSource.length(); i++ )
+	{
+		if( bInSingleLineComment )
+		{
+			if( sSource[i] == '\r' || sSource[i] == '\n')
+			{
+					
+				bInSingleLineComment = false;
+			}
+			else
+			{
+				sSource[i] = ' ';
+			}
+		}
+		else if( bInMultilineComment )
+		{
+			if( sSource[i] == '*' 
+				&& i+1 < sSource.length() 
+				&& sSource[i+1] == '/' )
+			{
+				sSource[i] = ' ';
+				sSource[i+1] = ' ';
+				bInMultilineComment = false;
+			}
+			else 
+			{
+				sSource[i] = ' ';
+			}
+		}
+		else 
+		{
+			if( sSource[i] == '*' && sSource[i-1] == '/' )
+			{
+				sSource[i] = ' ';
+				sSource[i-1] = ' ';
+				bInMultilineComment = true;
+			}
+			else if( sSource[i] == '/' && sSource[i-1] == '/')
+			{
+				sSource[i] = ' ';
+				sSource[i-1] = ' ';
+				bInSingleLineComment = true;
+			}
+		}
+	}
+
+	return sSource;
+}
+
+
+
+
+void generateFeatures(Options & opt, Match * pMatch)
+{
+	// cout << "*****" << endl;
+	// cout << pMatch->t.pLine->displayString(true);
+	// cout << endl << "*****" << endl;
+	// cout << pMatch->t.pLine->displayString(false);
+	// cout << "*****" << endl;
+
+	cout << opt.label() << " ";
+
+	for( int i = 0; i < opt.context(); i++ )
+	{
+		int iIndex = (static_cast<int>(pMatch->iOffset) - opt.context()) + i;
+
+		if( iIndex < 0 ) 
+		{
+			cout << "~~empty ";
+		}
+		else 
+		{
+			cout << pMatch->t.pLine->terms()[static_cast<size_t>(iIndex)]
+				.displayString(!opt.abstract())
+				<< " ";
+		}
+	}
+
+	cout << "~~patch ";
+
+	for( int i = 0; i < opt.maxTokens(); i++ )
+	{
+		if( static_cast<size_t>(i) < pMatch->pM->replaceSize() )
+		{
+			cout << pMatch->pM->replaceTerm(i).displayString(!opt.abstract())
+				<< " ";
+		}
+		else
+		{
+			cout << "~~empty ";
+		}
+	}
+
+
+	cout << "~~patch ";
+
+
+	for( int i = 0; i < opt.context(); i++ )
+	{
+		size_t iIndex = pMatch->iOffset + static_cast<size_t>(i);
+
+		if( iIndex >= pMatch->t.pLine->terms().size() )
+		{
+			cout << "~~empty ";
+		}
+		else 
+		{
+			cout << pMatch->t.pLine->terms()[static_cast<size_t>(iIndex)]
+				.displayString(!opt.abstract())
+				<< " ";
+		}
+	}
+
+	cout << endl;
+
+	return;
+
+	ofstream out;
+	out.open(pMatch->t.sFilename.c_str());
+
+
+	size_t iPatchStart =
+		pMatch->t.pLine->terms()[pMatch->iOffset].offset();
+
+	size_t iTermCount = pMatch->pM->matchSize();
+
+	size_t iPatchEnd =
+		pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].offset()
+		+ pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].size();
+
+
+	stringstream ss;
+
+	for (size_t i = 0; i < pMatch->pM->replaceSize(); i++)
+	{
+		const Line::Term * pTerm = &pMatch->pM->replaceTerm(i);
+
+		switch (pTerm->type())
+		{
+		case tsKeyword:
+		case tsOperator:
+			ss << " " << pTerm->value() << " ";
+			break;
+
+		case tsExactIdentifier:
+			ss << " " << pTerm->value() << " ";
+			break;
+
+		case tsLiteral:
+		case tsIdentifier:
+		case tsNumber:
+		{
+			size_t iIndex = string::npos;
+
+			for (size_t j = 0; j < pMatch->pM->matchSize(); j++)
+			{
+				if (pMatch->pM->matchTerm(j).type() == pTerm->type()
+					&& pMatch->pM->matchTerm(j).index()
+					== pTerm->index())
+				{
+					iIndex = j;
+					break;
+				}
+			}
+
+			if (iIndex != string::npos)
+			{
+				ss << " " << pMatch->t.pLine->terms()[pMatch->iOffset + iIndex].value()
+					<< " ";
+			}
+		}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+
+	if (opt.verbose())
+	{
+		cout << "Mutant (and source patch):" << endl;
+		cout << "   " << pMatch->pM->serialize() << endl << endl;
+
+		cout << "Extracted code:" << endl;
+		cout << "   " << pMatch->t.pLine->source().substr(iPatchStart,
+			iPatchEnd - iPatchStart) << endl << endl;
+
+		cout << "Un-patched code:" << endl;
+		cout << "   " << ss.str() << endl;
+	}
+
+
+	if (iPatchStart > 0)
+	{
+		out << pMatch->t.pLine->originalSource().substr(0, iPatchStart - 1);
+	}
+
+	out << ss.str();
+
+	out << pMatch->t.pLine->originalSource().substr(iPatchEnd);
+
+	out.close();
+
+
+}
+
 int main(int argc, char * argv[])
 {
 	Options opt;
@@ -140,80 +469,10 @@ int main(int argc, char * argv[])
 
 		string sOriginalFile = sTargetFile;
 
-		bool bInMultilineComment = false;
-		bool bInSingleLineComment = false;
 
 		if( opt.CStyleComments() )
 		{
-			// Check for a comment left over from
-			// a previous line
-			if( bInMultilineComment )
-			{
-				size_t iLoc = sTargetFile.find("*/");
-
-				if( iLoc == string::npos )
-				{
-					// If we're in a multiline and
-					// we don't see an end, ignore this
-					// line
-					continue;
-				}
-				else
-				{
-					// Continue the line after the
-					// multiline ends
-					sTargetFile = sTargetFile.substr(iLoc + 2);
-					bInMultilineComment = false;
-				}
-			}
-
-
-			for( size_t i = 1; i < sTargetFile.length(); i++ )
-			{
-				if( bInSingleLineComment )
-				{
-					if( sTargetFile[i] == '\r' || sTargetFile[i] == '\n')
-					{
-							
-						bInSingleLineComment = false;
-					}
-					else
-					{
-						sTargetFile[i] = ' ';
-					}
-				}
-				else if( bInMultilineComment )
-				{
-					if( sTargetFile[i] == '*' 
-						&& i+1 < sTargetFile.length() 
-						&& sTargetFile[i+1] == '/' )
-					{
-						sTargetFile[i] = ' ';
-						sTargetFile[i+1] = ' ';
-						bInMultilineComment = false;
-					}
-					else 
-					{
-						sTargetFile[i] = ' ';
-					}
-				}
-				else 
-				{
-					if( sTargetFile[i] == '*' && sTargetFile[i-1] == '/' )
-					{
-						sTargetFile[i] = ' ';
-						sTargetFile[i-1] = ' ';
-						bInMultilineComment = true;
-					}
-					else if( sTargetFile[i] == '/' && sTargetFile[i-1] == '/')
-					{
-						sTargetFile[i] = ' ';
-						sTargetFile[i-1] = ' ';
-						bInSingleLineComment = true;
-					}
-				}
-			}
-
+			sTargetFile = stripComments(sTargetFile);
 		}		
 
 		vTargets.push_back(
@@ -418,11 +677,6 @@ int main(int argc, char * argv[])
 				return 1;
 			}
 
-
-
-
-			//Match & m = vMatches[iIndex];
-
 			Match * pMatch = nullptr;
 
 			MutantBase * pMutant = vMutants[iMutantIndex];
@@ -455,9 +709,6 @@ int main(int argc, char * argv[])
 				}
 			}
 
-
-
-
 			if (!opt.skipBackup())
 			{
 				string sOrigFilename = pMatch->t.sFilename + ".orig";
@@ -485,92 +736,17 @@ int main(int argc, char * argv[])
 				}
 			}
 
-			ofstream out;
-			out.open(pMatch->t.sFilename.c_str());
 
-
-			size_t iPatchStart =
-				pMatch->t.pLine->terms()[pMatch->iOffset].offset();
-
-			size_t iTermCount = pMatch->pM->matchSize();
-
-			size_t iPatchEnd =
-				pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].offset()
-				+ pMatch->t.pLine->terms()[pMatch->iOffset + iTermCount - 1].size();
-
-
-			stringstream ss;
-
-			for (size_t i = 0; i < pMatch->pM->replaceSize(); i++)
+			if( opt.features() )
 			{
-				const Line::Term * pTerm = &pMatch->pM->replaceTerm(i);
-
-				switch (pTerm->type())
-				{
-				case tsKeyword:
-				case tsOperator:
-					ss << " " << pTerm->value() << " ";
-					break;
-
-				case tsExactIdentifier:
-					ss << " " << pTerm->value() << " ";
-					break;
-
-				case tsLiteral:
-				case tsIdentifier:
-				case tsNumber:
-				{
-					size_t iIndex = string::npos;
-
-					for (size_t j = 0; j < pMatch->pM->matchSize(); j++)
-					{
-						if (pMatch->pM->matchTerm(j).type() == pTerm->type()
-							&& pMatch->pM->matchTerm(j).index()
-							== pTerm->index())
-						{
-							iIndex = j;
-							break;
-						}
-					}
-
-					if (iIndex != string::npos)
-					{
-						ss << " " << pMatch->t.pLine->terms()[pMatch->iOffset + iIndex].value()
-							<< " ";
-					}
-				}
-					break;
-
-				default:
-					break;
-				}
+				generateFeatures(opt, pMatch);
 			}
-
-
-			if (opt.verbose())
+			else
 			{
-				cout << "Mutant (and source patch):" << endl;
-				cout << "   " << pMatch->pM->serialize() << endl << endl;
-
-				cout << "Extracted code:" << endl;
-				cout << "   " << pMatch->t.pLine->source().substr(iPatchStart,
-					iPatchEnd - iPatchStart) << endl << endl;
-
-				cout << "Un-patched code:" << endl;
-				cout << "   " << ss.str() << endl;
+				insertMutant(opt, pMatch);
 			}
+			
 
-
-			if (iPatchStart > 0)
-			{
-				out << pMatch->t.pLine->originalSource().substr(0, iPatchStart - 1);
-			}
-
-			out << ss.str();
-
-			out << pMatch->t.pLine->originalSource().substr(iPatchEnd);
-
-			out.close();
 
 			delete pMatch;
 		}

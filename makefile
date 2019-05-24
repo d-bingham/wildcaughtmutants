@@ -1,7 +1,7 @@
 #CPPC = /s/gcc-4.8.3/bin/g++
 CPPC = g++
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -O3 -c -fPIC -Wno-unused-function -Wno-unused-value -Wno-unused-result --std=c++11
+CFLAGS = -Wall -Wextra -Werror -O3 -c -fPIC -Wno-unused-function -Wno-unused-value -Wno-unused-result -Wno-reorder --std=c++11
 LFLAGS = -Wall -Wextra -Werror -O3 -fPIC 
 
 SRCDIR = src

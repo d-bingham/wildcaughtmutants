@@ -29,6 +29,10 @@ Options::Options(bool bMutGen)
 	, m_iLiteralMax(4)
 	, m_iTokenMax(10)
 	, m_pTarget(NULL)
+	, m_bFeatures(false)
+	, m_iContext(20)
+	, m_iLabel(0)
+	, m_bAbstract(false)
 {
 }
 
@@ -78,6 +82,14 @@ bool Options::parse(int argc, char * argv[])
 				{
 					m_bForwardMutants = true;
 				}
+				else if( sArg == "--features" )
+				{
+					m_bFeatures = true;
+				}
+				else if( sArg == "--abstract" )
+				{
+					m_bAbstract = true;
+				}
 				else if( sArg == "--print-only" )
 				{
 					m_bPrintOnly = true;
@@ -97,6 +109,14 @@ bool Options::parse(int argc, char * argv[])
 				else if( sArg == "--trim-text")
 				{
 					m_bTrimText = true;
+				}
+				else if( sArg == "--context" )
+				{
+					m_bGood = parseCommandInt(m_iContext, i, argc, argv);
+				}
+				else if( sArg == "--label" )
+				{
+					m_bGood = parseCommandInt(m_iLabel, i, argc, argv);
 				}
 				else
 				{
@@ -371,6 +391,11 @@ void Options::displayOptions()
 			<< "  -t TARGET_FILES...  attempt to insert mutant into TARGET_FILE" << endl
 			<< "  -b                  skip backup (by default, modified files are copied to " << endl
 			<< "                      \"file.orig\" before mutant insertion)" << endl
+			<< "  --features          generate feature vector from insertion" << endl
+			<< "  --context #         how many tokens around the patch to featurize" << endl
+			<< "  --label #           label to generate in feature vector" << endl
+			<< "  --abstract          generate mutgen-style abstracted tokens in feature" << endl
+			<< "                      vector" << endl
 			;
 	}
 

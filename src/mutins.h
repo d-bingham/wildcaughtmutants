@@ -35,27 +35,27 @@ class Line
 
     class Term
     {
-      public:
-	Term(tokenState ts, std::string sValue,
-	     size_t iOffset, size_t iSize)
-	    : m_tsType(ts), m_sValue(sValue), m_iIndex(-1), m_iOffset(iOffset), m_iSize(iSize)
-	{
-	}
+    public:
+        Term(tokenState ts, std::string sValue,
+            size_t iOffset, size_t iSize)
+            : m_tsType(ts), m_sValue(sValue), m_iIndex(-1), m_iOffset(iOffset), m_iSize(iSize)
+        {
+        }
 
-	tokenState type() const { return m_tsType; }
-	std::string value() const { return m_sValue; }
-	int index() const { return m_iIndex; }
-	void setIndex(int iIndex) { m_iIndex = iIndex; }
-	std::string displayString(bool bRaw = false) const;
-	size_t offset() const { return m_iOffset; }
-	size_t size() const { return m_iSize; }
+        tokenState type() const { return m_tsType; }
+        std::string value() const { return m_sValue; }
+        int index() const { return m_iIndex; }
+        void setIndex(int iIndex) { m_iIndex = iIndex; }
+        std::string displayString(bool bRaw = false) const;
+        size_t offset() const { return m_iOffset; }
+        size_t size() const { return m_iSize; }
 
-      private:
-	tokenState m_tsType;
-	std::string m_sValue;
-	int m_iIndex;
-	size_t m_iOffset;
-	size_t m_iSize;
+    private:
+        tokenState m_tsType;
+        std::string m_sValue;
+        int m_iIndex;
+        size_t m_iOffset;
+        size_t m_iSize;
     };
 
     static void tokenize(std::string sLine, std::vector<Term> &vTerms);
