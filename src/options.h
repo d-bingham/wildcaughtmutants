@@ -52,8 +52,10 @@ class Line;
 		int context() { return m_iContext; }
 		int label() { return m_iLabel; }
 		bool abstract() { return m_bAbstract; }
+		bool allFeatures() { return m_bAllFeatures; }
 
 	private:
+		bool m_bAllFeatures;
 		bool m_bAbstract;
 		bool m_bFeatures;
 		int m_iContext;

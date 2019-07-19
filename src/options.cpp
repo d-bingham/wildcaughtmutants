@@ -33,6 +33,7 @@ Options::Options(bool bMutGen)
 	, m_iContext(20)
 	, m_iLabel(0)
 	, m_bAbstract(false)
+	, m_bAllFeatures(false)
 {
 }
 
@@ -117,6 +118,10 @@ bool Options::parse(int argc, char * argv[])
 				else if( sArg == "--label" )
 				{
 					m_bGood = parseCommandInt(m_iLabel, i, argc, argv);
+				}
+				else if( sArg == "--all-features" ) 
+				{
+					m_bAllFeatures = true;
 				}
 				else
 				{

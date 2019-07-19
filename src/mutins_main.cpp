@@ -206,20 +206,11 @@ string stripComments(string sSource)
 
 
 
-
-void generateFeatures(Options & opt, Match * pMatch)
+void featureVector(int iContext, bool bAbstract, int iMaxTokens, Match * pMatch)
 {
-	// cout << "*****" << endl;
-	// cout << pMatch->t.pLine->displayString(true);
-	// cout << endl << "*****" << endl;
-	// cout << pMatch->t.pLine->displayString(false);
-	// cout << "*****" << endl;
-
-	cout << opt.label() << " ";
-
-	for( int i = 0; i < opt.context(); i++ )
+	for( int i = 0; i < iContext; i++ )
 	{
-		int iIndex = (static_cast<int>(pMatch->iOffset) - opt.context()) + i;
+		int iIndex = (static_cast<int>(pMatch->iOffset) - iContext) + i;
 
 		if( iIndex < 0 ) 
 		{
@@ -228,18 +219,18 @@ void generateFeatures(Options & opt, Match * pMatch)
 		else 
 		{
 			cout << pMatch->t.pLine->terms()[static_cast<size_t>(iIndex)]
-				.displayString(!opt.abstract())
+				.displayString(!bAbstract)
 				<< " ";
 		}
 	}
 
 	cout << "~~patch ";
 
-	for( int i = 0; i < opt.maxTokens(); i++ )
+	for( int i = 0; i < iMaxTokens; i++ )
 	{
 		if( static_cast<size_t>(i) < pMatch->pM->replaceSize() )
 		{
-			cout << pMatch->pM->replaceTerm(i).displayString(!opt.abstract())
+			cout << pMatch->pM->replaceTerm(i).displayString(!bAbstract)
 				<< " ";
 		}
 		else
@@ -252,7 +243,7 @@ void generateFeatures(Options & opt, Match * pMatch)
 	cout << "~~patch ";
 
 
-	for( int i = 0; i < opt.context(); i++ )
+	for( int i = 0; i < iContext; i++ )
 	{
 		size_t iIndex = pMatch->iOffset + static_cast<size_t>(i);
 
@@ -263,12 +254,37 @@ void generateFeatures(Options & opt, Match * pMatch)
 		else 
 		{
 			cout << pMatch->t.pLine->terms()[static_cast<size_t>(iIndex)]
-				.displayString(!opt.abstract())
+				.displayString(!bAbstract)
 				<< " ";
 		}
 	}
 
 	cout << endl;
+
+}
+
+void generateFeatures(Options & opt, Match * pMatch)
+{
+	// cout << "*****" << endl;
+	// cout << pMatch->t.pLine->displayString(true);
+	// cout << endl << "*****" << endl;
+	// cout << pMatch->t.pLine->displayString(false);
+	// cout << "*****" << endl;
+
+	if( opt.allFeatures() )
+	{
+		cout << "Concrete: ";
+		featureVector(opt.context(), false, opt.maxTokens(), pMatch);		
+		cout << "Abstract: ";
+		featureVector(opt.context(), true, opt.maxTokens(), pMatch);		
+	}
+	else 
+	{
+		cout << opt.label() << " ";
+
+		featureVector(opt.context(), opt.abstract(), opt.maxTokens(), pMatch);
+	}
+
 
 	return;
 
@@ -736,13 +752,17 @@ int main(int argc, char * argv[])
 				}
 			}
 
-
 			if( opt.features() )
 			{
 				generateFeatures(opt, pMatch);
 			}
 			else
 			{
+				if( opt.allFeatures() )
+				{
+					generateFeatures(opt, pMatch);
+				}
+
 				insertMutant(opt, pMatch);
 			}
 			
