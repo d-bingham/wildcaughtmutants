@@ -32,6 +32,7 @@ Options::Options(bool bMutGen)
 	, m_bFeatures(false)
 	, m_iContext(20)
 	, m_iLabel(0)
+	, m_iOrdinalMutant(-1)
 	, m_bAbstract(false)
 	, m_bAllFeatures(false)
 {
@@ -102,6 +103,10 @@ bool Options::parse(int argc, char * argv[])
 				else if( sArg == "--max-tokens")
 				{
 					m_bGood = parseCommandInt(m_iTokenMax, i, argc, argv);
+				}
+				else if( sArg == "--ordinal") 
+				{
+					m_bGood = parseCommandInt(m_iOrdinalMutant, i, argc, argv);
 				}
 				else if( sArg == "--c-comments")
 				{
@@ -401,6 +406,7 @@ void Options::displayOptions()
 			<< "  --label #           label to generate in feature vector" << endl
 			<< "  --abstract          generate mutgen-style abstracted tokens in feature" << endl
 			<< "                      vector" << endl
+			<< "  --ordinal #         insert mutant based on its ordinal position" << endl
 			;
 	}
 

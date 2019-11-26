@@ -51,6 +51,7 @@ class Line;
 		bool features() { return m_bFeatures; }
 		int context() { return m_iContext; }
 		int label() { return m_iLabel; }
+		int ordinalMutation() { return m_iOrdinalMutant; }
 		bool abstract() { return m_bAbstract; }
 		bool allFeatures() { return m_bAllFeatures; }
 
@@ -75,6 +76,7 @@ class Line;
 		int m_iMutantIndex;
 		int m_iLiteralMax;
 		int m_iTokenMax;
+		int m_iOrdinalMutant;
 		//std::string m_sKeywordFile;
 		//std::string m_sOperatorFile;
 		std::string m_sLanguageDefFile;
