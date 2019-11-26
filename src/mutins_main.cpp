@@ -545,7 +545,10 @@ int main(int argc, char * argv[])
 		mt19937 mt(opt.randomSeed());
 
 
-		if (opt.mutantIndex() == -1)
+		size_t iOrdinalMutantIndex = 0;
+		size_t iOrdinalMutantMatch = 0;
+
+		if (opt.mutantIndex() == -1 )
 		{
 			if( opt.countOnly() )
 			{
@@ -597,6 +600,13 @@ int main(int argc, char * argv[])
 						{
 							//vMatches.push_back(Match( t, i, pMutant ));
 							pMutant->found();
+
+							if( opt.ordinalMutation() == iCountOnly ) 
+							{
+								iOrdinalMutantIndex = i;
+								iOrdinalMutantMatch = j;
+							}
+
 							iCountOnly++;
 						}
 					}
@@ -606,6 +616,7 @@ int main(int argc, char * argv[])
 		}
 		else
 		{
+
 			if (opt.mutantIndex() >= static_cast<int>(vMutants.size()))
 			{
 				cout << "Invalid mutant index." << endl;
@@ -629,8 +640,6 @@ int main(int argc, char * argv[])
 					}
 				}
 			}
-
-
 		}
 
 
@@ -664,7 +673,12 @@ int main(int argc, char * argv[])
 			size_t iMutantIndex = 0;
 			size_t iInsertionIndex = 0;
 
-			if( opt.matchIndex() > -1 && opt.mutantIndex() > -1 ) 
+			if( opt.ordinalMutation() > -1 ) 
+			{
+				iMutantIndex = iOrdinalMutantIndex;
+				iInsertionIndex = iOrdinalMutantMatch;
+			}
+			else if( opt.matchIndex() > -1 && opt.mutantIndex() > -1 ) 
 			{
 				iMutantIndex = opt.mutantIndex();
 				iInsertionIndex = opt.matchIndex();
