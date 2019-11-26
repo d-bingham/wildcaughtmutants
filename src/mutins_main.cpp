@@ -544,7 +544,6 @@ int main(int argc, char * argv[])
 	{
 		mt19937 mt(opt.randomSeed());
 
-
 		size_t iOrdinalMutantIndex = 0;
 		size_t iOrdinalMutantMatch = 0;
 
@@ -603,8 +602,8 @@ int main(int argc, char * argv[])
 
 							if( opt.ordinalMutation() == iCountOnly ) 
 							{
-								iOrdinalMutantIndex = i;
-								iOrdinalMutantMatch = j;
+								iOrdinalMutantIndex = j;
+								iOrdinalMutantMatch = k;
 							}
 
 							iCountOnly++;
