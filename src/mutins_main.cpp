@@ -577,7 +577,8 @@ int main(int argc, char * argv[])
 						}
 					}
 
-					if( iCount > 0 && iCount < 20 )
+					//if( iCount > 0 && iCount < 20 )
+					if( iCount > 0 )
 					{
 						cout << i << " " << iCount << endl;
 					}
@@ -602,6 +603,7 @@ int main(int argc, char * argv[])
 
 							if( opt.ordinalMutation() == iCountOnly ) 
 							{
+								cout << "Found ordinal match at " << iCountOnly << endl;
 								iOrdinalMutantIndex = j;
 								iOrdinalMutantMatch = k;
 							}
@@ -612,6 +614,8 @@ int main(int argc, char * argv[])
 				}
 
 			}
+
+			cout << "Saw " << iCountOnly << " mutants." << endl;
 		}
 		else
 		{
